@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Check your symptoms with AI-powered analysis. Select symptoms and get instant health insights.">
+  <title>Symptom Checker — Medicare</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div class="checker-container">
+    <div class="checker-header">
+      <h1>🩺 Symptom <span class="text-gradient">Checker</span></h1>
+      <p>Select the symptoms you're experiencing and our AI will analyze possible conditions.</p>
+    </div>
+
+    <div class="card card-elevated" style="padding: 32px;">
+      <h3 style="margin-bottom: 4px; font-size: 1.1rem;">Select Your Symptoms</h3>
+      <p style="font-size: 0.85rem; color: var(--gray-500); margin-bottom: 20px;">Choose all symptoms that apply to you
+      </p>
+
+      <div id="symptomGrid" class="symptom-grid">
+        <div class="loader">
+          <div class="spinner"></div> Loading symptoms...
+        </div>
+      </div>
+
+      <div class="selected-count" id="selectedCount" style="display: none;">
+        <strong><span id="countValue">0</span></strong> symptom(s) selected
+      </div>
+
+      <div class="checker-actions">
+        <button class="btn btn-primary btn-lg" id="analyzeBtn" onclick="analyzeSymptoms()" disabled>
+          🔬 Analyze Symptoms
+        </button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px; padding: 20px; border-left: 4px solid #f59e0b;">
+      <p style="font-size: 0.85rem; color: var(--gray-600);">
+        <strong>⚠️ Note:</strong> This is an AI-based preliminary analysis and is not a substitute for professional
+        medical advice. Please consult a healthcare provider for proper diagnosis.
+      </p>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let selectedSymptoms = new Set();
+
+    // Load symptoms from API
+    async function loadSymptoms() {
+      try {
+        const data = await apiCall('/api/symptoms/list');
+        renderSymptoms(data.symptoms);
+      } catch (err) {
+        document.getElementById('symptomGrid').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>Unable to load symptoms</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderSymptoms(symptoms) {
+      const grid = document.getElementById('symptomGrid');
+      grid.innerHTML = symptoms.map(s => `
+        <div class="symptom-checkbox">
+          <input type="checkbox" id="symptom_${s.id}" value="${s.id}" onchange="toggleSymptom('${s.id}')">
+          <label for="symptom_${s.id}">
+            <span class="symptom-icon">${s.icon}</span>
+            <span>${s.label}</span>
+            <span class="symptom-check-mark"></span>
+          </label>
+        </div>
+      `).join('');
+
+      document.getElementById('selectedCount').style.display = 'block';
+    }
+
+    function toggleSymptom(id) {
+      if (selectedSymptoms.has(id)) {
+        selectedSymptoms.delete(id);
+      } else {
+        selectedSymptoms.add(id);
+      }
+      updateCount();
+    }
+
+    function updateCount() {
+      const count = selectedSymptoms.size;
+      document.getElementById('countValue').textContent = count;
+      document.getElementById('analyzeBtn').disabled = count === 0;
+    }
+
+    async function analyzeSymptoms() {
+      if (selectedSymptoms.size === 0) {
+        showToast('Please select at least one symptom', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width: 18px; height: 18px; border-width: 2px;"></div> Analyzing...';
+
+      try {
+        const user = getUser();
+        const data = await apiCall('/api/symptoms/analyze', {
+          method: 'POST',
+          body: JSON.stringify({
+            symptoms: Array.from(selectedSymptoms),
+            user_id: user ? user.user_id : null
+          })
+        });
+
+        // Store result in sessionStorage for result page
+        sessionStorage.setItem('analysisResult', JSON.stringify(data));
+        window.location.href = '/result';
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '🔬 Analyze Symptoms';
+      }
+    }
+
+    loadSymptoms();
+  </script>
+</body>
+
+</html>

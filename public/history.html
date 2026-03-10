@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your medical history dashboard — view past symptom analyses and health trends.">
+  <title>Medical History — Medicare</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1>📊 Medical History <span class="text-gradient">Dashboard</span></h1>
+      <p>Track your past symptom analyses and health insights.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="historyStats">
+      <div class="card stat-card">
+        <div class="stat-icon blue">📋</div>
+        <div>
+          <div class="stat-value" id="totalAnalyses">-</div>
+          <div class="stat-label">Total Analysis</div>
+        </div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon green">🩺</div>
+        <div>
+          <div class="stat-value" id="uniqueConditions">-</div>
+          <div class="stat-label">Unique Conditions</div>
+        </div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-icon orange">📅</div>
+        <div>
+          <div class="stat-value" id="lastCheckDate">-</div>
+          <div class="stat-label">Last Check-up</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History List -->
+    <div class="card card-elevated" style="padding: 0; overflow: hidden;">
+      <div style="padding: 20px 24px; border-bottom: 1px solid var(--gray-200);">
+        <h3 style="font-size: 1.1rem;">Analysis History</h3>
+      </div>
+      <div id="historyList">
+        <div class="loader">
+          <div class="spinner"></div> Loading history...
+        </div>
+      </div>
+    </div>
+    <!-- Sequential Navigation -->
+    <div style="text-align: center; margin-top: 28px;">
+      <a href="/checker" class="btn btn-primary btn-lg">🩺 Start New Symptom Check</a>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    async function loadHistory() {
+      try {
+        const data = await apiCall('/api/symptoms/history');
+        const records = data.records;
+
+        // Update stats
+        document.getElementById('totalAnalyses').textContent = records.length;
+        const uniqueDiseases = new Set(records.map(r => r.predicted_disease));
+        document.getElementById('uniqueConditions').textContent = uniqueDiseases.size;
+        document.getElementById('lastCheckDate').textContent = records.length > 0
+          ? formatDate(records[0].date)
+          : 'N/A';
+
+        renderHistory(records);
+      } catch (err) {
+        document.getElementById('historyList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>Unable to load history</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderHistory(records) {
+      const container = document.getElementById('historyList');
+
+      if (records.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <h3>No Records Yet</h3>
+            <p>Your symptom analysis history will appear here after you run your first check.</p>
+            <a href="/checker" class="btn btn-primary mt-3">🩺 Run Symptom Check</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="history-list" style="padding: 8px 0;">
+          ${records.map(record => {
+        const dp = getDateParts(record.date);
+        const symptomsText = (record.symptoms || []).map(s => symptomIdToLabel(s)).join(', ');
+        const confidence = record.confidence || (record.predictions && record.predictions[0] ? record.predictions[0].confidence : 0);
+        return `
+              <div class="history-item">
+                <div class="history-date">
+                  <div class="history-date-day">${dp.day}</div>
+                  <div class="history-date-month">${dp.month}</div>
+                </div>
+                <div class="history-divider"></div>
+                <div class="history-content">
+                  <div class="history-disease">${record.predicted_disease}</div>
+                  <div class="history-symptoms-text">${symptomsText}</div>
+                </div>
+                <div class="history-confidence">${confidence}%</div>
+              </div>
+            `;
+      }).join('')}
+        </div>
+      `;
+    }
+
+    if (isLoggedIn()) {
+      loadHistory();
+    }
+  </script>
+</body>
+
+</html>

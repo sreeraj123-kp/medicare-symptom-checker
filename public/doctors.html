@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Find recommended doctors by specialization — cardiologists, neurologists, dermatologists, and more.">
+  <title>Doctor Recommendations — Medicare</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- Leaflet.js CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #doctorMap {
+      width: 100%;
+      height: 340px;
+      border-radius: var(--border-radius-lg);
+      border: 1px solid var(--gray-200);
+      margin-bottom: 20px;
+      z-index: 0;
+    }
+
+    .location-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--primary-50), var(--teal-50));
+      border: 1px solid var(--primary-200);
+      border-radius: var(--border-radius);
+      margin-bottom: 16px;
+      font-size: 0.84rem;
+      flex-wrap: wrap;
+    }
+
+    .location-bar .loc-icon {
+      font-size: 1.1rem;
+    }
+
+    .location-bar .loc-text {
+      flex: 1;
+      color: var(--gray-700);
+      font-weight: 500;
+    }
+
+    .location-bar .loc-text strong {
+      color: var(--primary-700);
+    }
+
+    .distance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--teal-100);
+      color: var(--teal-600);
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .sort-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.82rem;
+      color: var(--gray-500);
+    }
+
+    .sort-bar button {
+      padding: 5px 12px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 50px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: white;
+      color: var(--gray-600);
+      font-family: var(--font-sans);
+    }
+
+    .sort-bar button.active {
+      border-color: var(--teal-500);
+      color: var(--teal-600);
+      background: var(--teal-50);
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 10px !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    .leaflet-popup-content {
+      margin: 10px 14px !important;
+      font-family: var(--font-sans) !important;
+      font-size: 0.82rem !important;
+      line-height: 1.5 !important;
+    }
+
+    .popup-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-bottom: 2px;
+    }
+
+    .popup-spec {
+      color: var(--teal-600);
+      font-weight: 600;
+      font-size: 0.78rem;
+    }
+
+    .popup-hospital {
+      color: var(--gray-500);
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="doctors-container">
+    <div class="doctors-header">
+      <h1>👨‍⚕️ Find <span class="text-gradient">Doctors</span></h1>
+      <p style="color: var(--gray-500);">Browse doctors near you — sorted by distance from your location</p>
+    </div>
+
+    <!-- Location Status Bar -->
+    <div class="location-bar" id="locationBar">
+      <span class="loc-icon">📍</span>
+      <span class="loc-text" id="locationText">Detecting your location...</span>
+      <button class="btn btn-sm btn-primary" id="locateBtn" onclick="requestLocation()">Enable Location</button>
+    </div>
+
+    <!-- Map -->
+    <div id="doctorMap"></div>
+
+    <!-- Filters -->
+    <div class="doctors-filter" id="filterContainer">
+      <button class="filter-chip active" onclick="filterDoctors('all', this)">All Specialists</button>
+    </div>
+
+    <!-- Sort Bar -->
+    <div class="sort-bar" id="sortBar" style="display: none;">
+      <span>Sort by:</span>
+      <button class="active" onclick="sortDoctors('distance', this)">📍 Nearest</button>
+      <button onclick="sortDoctors('name', this)">🔤 Name</button>
+      <button onclick="sortDoctors('specialization', this)">🏥 Specialization</button>
+    </div>
+
+    <!-- Doctor Cards -->
+    <div id="doctorsList" class="doctors-grid">
+      <div class="loader">
+        <div class="spinner"></div> Loading doctors...
+      </div>
+    </div>
+
+    <div id="emptyDoctors" style="display: none;">
+      <div class="empty-state">
+        <div class="empty-state-icon">👨‍⚕️</div>
+        <h3>No Doctors Found</h3>
+        <p>No doctors match the selected specialization.</p>
+      </div>
+    </div>
+
+    <!-- Sequential Navigation -->
+    <div style="text-align: center; margin-top: 28px; display: flex; justify-content: center; gap: 10px;">
+      <a href="/result" class="btn btn-secondary">← Back to Results</a>
+      <a href="/history" class="btn btn-primary btn-lg">Next: View History →</a>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <!-- Leaflet.js -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let allDoctors = [];
+    let filteredDoctors = [];
+    let specializations = new Set();
+    let userLat = null;
+    let userLng = null;
+    let map = null;
+    let markers = [];
+    let userMarker = null;
+    let currentSort = 'distance';
+    let currentFilter = 'all';
+
+    // Initialize Leaflet map (centered on India)
+    function initMap() {
+      map = L.map('doctorMap', {
+        scrollWheelZoom: true,
+        zoomControl: true
+      }).setView([20.5937, 78.9629], 5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18
+      }).addTo(map);
+    }
+
+    // Calculate distance between two points using Haversine formula
+    function calcDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Format distance for display
+    function formatDistance(km) {
+      if (km < 1) return `${Math.round(km * 1000)} m`;
+      if (km < 10) return `${km.toFixed(1)} km`;
+      return `${Math.round(km)} km`;
+    }
+
+    // Request user location
+    function requestLocation() {
+      const btn = document.getElementById('locateBtn');
+      const text = document.getElementById('locationText');
+      btn.disabled = true;
+      btn.textContent = 'Locating...';
+      text.textContent = 'Detecting your location...';
+
+      if (!navigator.geolocation) {
+        text.innerHTML = '<strong>Geolocation not supported</strong> by your browser';
+        btn.textContent = 'Not Supported';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+
+          text.innerHTML = `Your location: <strong>${userLat.toFixed(4)}, ${userLng.toFixed(4)}</strong>`;
+          btn.textContent = '✓ Located';
+          btn.style.background = 'var(--teal-500)';
+
+          // Add user marker to map
+          if (userMarker) map.removeLayer(userMarker);
+          const userIcon = L.divIcon({
+            className: 'user-location-marker',
+            html: '<div style="width:16px;height:16px;background:#4361e6;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(67,97,230,0.4);"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+          userMarker = L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 })
+            .addTo(map)
+            .bindPopup('<div class="popup-name">📍 Your Location</div>');
+
+          // Calculate distances and update
+          calculateDistances();
+          document.getElementById('sortBar').style.display = 'flex';
+
+          // Zoom to show user + nearby doctors
+          const bounds = L.latLngBounds([[userLat, userLng]]);
+          allDoctors.forEach(d => {
+            if (d.distance < 500) bounds.extend([d.lat, d.lng]);
+          });
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+        },
+        (err) => {
+          btn.disabled = false;
+          btn.textContent = 'Retry';
+          switch (err.code) {
+            case 1:
+              text.innerHTML = '<strong>Location access denied</strong> — please allow in browser settings';
+              break;
+            case 2:
+              text.innerHTML = '<strong>Location unavailable</strong> — try again';
+              break;
+            case 3:
+              text.innerHTML = '<strong>Location timed out</strong> — try again';
+              break;
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    }
+
+    // Calculate distance from user to all doctors
+    function calculateDistances() {
+      allDoctors.forEach(doc => {
+        if (doc.lat && doc.lng && userLat !== null) {
+          doc.distance = calcDistance(userLat, userLng, doc.lat, doc.lng);
+        }
+      });
+      applyFilterAndSort();
+    }
+
+    // Add doctor markers to map
+    function updateMapMarkers(doctors) {
+      // Clear existing markers
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      const docIcon = L.divIcon({
+        className: 'doctor-map-marker',
+        html: '<div style="width:28px;height:28px;background:white;border:2px solid #38b2ac;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">🏥</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      doctors.forEach(doc => {
+        if (!doc.lat || !doc.lng) return;
+        const distText = doc.distance ? ` (${formatDistance(doc.distance)})` : '';
+        const marker = L.marker([doc.lat, doc.lng], { icon: docIcon })
+          .addTo(map)
+          .bindPopup(`
+            <div class="popup-name">${doc.name}</div>
+            <div class="popup-spec">${doc.specialization}</div>
+            <div class="popup-hospital">🏥 ${doc.hospital}${distText}</div>
+          `);
+        markers.push(marker);
+      });
+
+      // Fit map bounds if no user location
+      if (userLat === null && doctors.length > 0) {
+        const bounds = L.latLngBounds(doctors.filter(d => d.lat).map(d => [d.lat, d.lng]));
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    // Load doctors from API
+    async function loadDoctors() {
+      try {
+        const data = await apiCall('/api/doctors');
+        allDoctors = data.doctors;
+
+        allDoctors.forEach(d => specializations.add(d.specialization));
+
+        // Build filter chips
+        const filterContainer = document.getElementById('filterContainer');
+        specializations.forEach(spec => {
+          const chip = document.createElement('button');
+          chip.className = 'filter-chip';
+          chip.textContent = spec;
+          chip.onclick = function () { filterDoctors(spec, this); };
+          filterContainer.appendChild(chip);
+        });
+
+        applyFilterAndSort();
+
+        // Auto-request location
+        requestLocation();
+      } catch (err) {
+        document.getElementById('doctorsList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⚠️</div>
+            <h3>Unable to load doctors</h3>
+            <p>${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function filterDoctors(spec, el) {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      currentFilter = spec;
+      applyFilterAndSort();
+    }
+
+    function sortDoctors(sortBy, el) {
+      document.querySelectorAll('.sort-bar button').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      currentSort = sortBy;
+      applyFilterAndSort();
+    }
+
+    function applyFilterAndSort() {
+      // Filter
+      filteredDoctors = currentFilter === 'all'
+        ? [...allDoctors]
+        : allDoctors.filter(d => d.specialization === currentFilter);
+
+      // Sort
+      if (currentSort === 'distance' && userLat !== null) {
+        filteredDoctors.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+      } else if (currentSort === 'name') {
+        filteredDoctors.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (currentSort === 'specialization') {
+        filteredDoctors.sort((a, b) => a.specialization.localeCompare(b.specialization));
+      }
+
+      renderDoctors(filteredDoctors);
+      updateMapMarkers(filteredDoctors);
+    }
+
+    function renderDoctors(doctors) {
+      const container = document.getElementById('doctorsList');
+      const emptyState = document.getElementById('emptyDoctors');
+
+      if (doctors.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      container.innerHTML = doctors.map(doc => {
+        const distHtml = doc.distance
+          ? `<div class="distance-badge">📍 ${formatDistance(doc.distance)} away</div>`
+          : '';
+        return `
+        <div class="card doctor-card" onclick="panToDoctor(${doc.lat}, ${doc.lng})" style="cursor:pointer;">
+          <div class="doctor-avatar">👨‍⚕️</div>
+          <div class="doctor-info">
+            <h3>${doc.name}</h3>
+            <div class="doctor-specialization">${doc.specialization}</div>
+            <div class="doctor-detail"><span class="doctor-detail-icon">🏥</span> ${doc.hospital}</div>
+            <div class="doctor-detail"><span class="doctor-detail-icon">📍</span> ${doc.location}</div>
+            <div class="doctor-detail"><span class="doctor-detail-icon">📞</span> ${doc.contact}</div>
+            ${distHtml}
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    // Pan map to doctor when card is clicked
+    function panToDoctor(lat, lng) {
+      if (lat && lng && map) {
+        map.flyTo([lat, lng], 13, { duration: 0.8 });
+        // Find and open the marker popup
+        markers.forEach(m => {
+          const pos = m.getLatLng();
+          if (Math.abs(pos.lat - lat) < 0.001 && Math.abs(pos.lng - lng) < 0.001) {
+            m.openPopup();
+          }
+        });
+      }
+    }
+
+    // Init
+    initMap();
+    loadDoctors();
+  </script>
+</body>
+
+</html>
