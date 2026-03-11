@@ -4,7 +4,7 @@ const diseaseDatabase = [
     symptoms: ['fever', 'cough', 'tiredness', 'body_aches', 'sore_throat'],
     description: 'A common viral infection that attacks the respiratory system. Most people recover within 1-2 weeks with rest and hydration.',
     severity: 'moderate',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Paracetamol (Dolo 650)', type: 'Fever & Pain Relief', dosage: '1 tablet every 6-8 hours' },
       { name: 'Cetirizine', type: 'Antihistamine', dosage: '1 tablet daily at bedtime' },
@@ -17,7 +17,7 @@ const diseaseDatabase = [
     symptoms: ['fever', 'cough', 'breathing_difficulty', 'tiredness', 'loss_of_taste', 'body_aches'],
     description: 'A respiratory illness caused by the SARS-CoV-2 virus. Symptoms range from mild to severe. Seek medical attention if breathing becomes difficult.',
     severity: 'high',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Paracetamol (Dolo 650)', type: 'Fever & Pain Relief', dosage: '1 tablet every 6-8 hours' },
       { name: 'Vitamin C (500mg)', type: 'Immune Support', dosage: '1 tablet daily' },
@@ -31,7 +31,7 @@ const diseaseDatabase = [
     symptoms: ['headache', 'nausea', 'sensitivity_to_light', 'dizziness'],
     description: 'A neurological condition characterized by intense, throbbing headaches often accompanied by nausea and sensitivity to light and sound.',
     severity: 'moderate',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Ibuprofen (Brufen 400)', type: 'Pain Relief (NSAID)', dosage: '1 tablet every 8 hours after food' },
       { name: 'Sumatriptan', type: 'Migraine-specific', dosage: 'As prescribed by doctor' },
@@ -44,7 +44,7 @@ const diseaseDatabase = [
     symptoms: ['stomach_pain', 'vomiting', 'nausea', 'diarrhea', 'fever'],
     description: 'Illness caused by consuming contaminated food or water. Usually resolves within a few days with proper hydration.',
     severity: 'moderate',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'ORS (Oral Rehydration Salts)', type: 'Rehydration', dosage: '1 sachet in 1L water, sip throughout day' },
       { name: 'Ondansetron (Emeset)', type: 'Anti-vomiting', dosage: '1 tablet every 8 hours' },
@@ -57,7 +57,7 @@ const diseaseDatabase = [
     symptoms: ['chest_pain', 'shortness_of_breath', 'dizziness', 'tiredness', 'irregular_heartbeat'],
     description: 'A range of conditions affecting the heart. Chest pain and shortness of breath are warning signs requiring immediate medical attention.',
     severity: 'critical',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Aspirin (75mg)', type: 'Blood Thinner', dosage: 'As prescribed by doctor' },
       { name: 'Atorvastatin', type: 'Cholesterol Lowering', dosage: 'As prescribed by doctor' },
@@ -70,7 +70,7 @@ const diseaseDatabase = [
     symptoms: ['sneezing', 'runny_nose', 'sore_throat', 'cough', 'mild_fever'],
     description: 'A mild viral infection of the upper respiratory tract. Symptoms usually improve within 7-10 days.',
     severity: 'low',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Cetirizine', type: 'Antihistamine', dosage: '1 tablet daily at bedtime' },
       { name: 'Paracetamol', type: 'Fever & Pain Relief', dosage: '1 tablet every 6-8 hours if needed' },
@@ -83,7 +83,7 @@ const diseaseDatabase = [
     symptoms: ['itching', 'skin_rash', 'sneezing', 'runny_nose', 'watery_eyes'],
     description: 'An immune system response to a foreign substance. Can range from mild to severe. Consult a dermatologist or allergist.',
     severity: 'moderate',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Levocetirizine', type: 'Antihistamine', dosage: '1 tablet daily at bedtime' },
       { name: 'Montelukast', type: 'Anti-allergic', dosage: '1 tablet daily at bedtime' },
@@ -96,7 +96,7 @@ const diseaseDatabase = [
     symptoms: ['fever', 'cough', 'breathing_difficulty', 'chest_pain', 'tiredness'],
     description: 'An infection that inflames the air sacs in one or both lungs. Requires prompt medical treatment.',
     severity: 'high',
-    minSymptoms: 3,
+    minSymptoms: 2,
     medicines: [
       { name: 'Amoxicillin + Clavulanate', type: 'Antibiotic', dosage: 'As prescribed by doctor' },
       { name: 'Azithromycin', type: 'Antibiotic', dosage: 'As prescribed by doctor' },
@@ -109,7 +109,7 @@ const diseaseDatabase = [
     symptoms: ['stomach_pain', 'nausea', 'bloating', 'loss_of_appetite'],
     description: 'Inflammation of the stomach lining. Can be caused by infection, regular use of certain pain relievers, or excessive alcohol use.',
     severity: 'moderate',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Pantoprazole (Pan 40)', type: 'Proton Pump Inhibitor', dosage: '1 tablet before breakfast' },
       { name: 'Domperidone', type: 'Anti-nausea / Motility', dosage: '1 tablet before meals' },
@@ -122,7 +122,7 @@ const diseaseDatabase = [
     symptoms: ['cough', 'mucus_production', 'tiredness', 'shortness_of_breath', 'chest_discomfort'],
     description: 'Inflammation of the lining of bronchial tubes. Acute bronchitis usually improves within a week to 10 days.',
     severity: 'moderate',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Ambroxol Syrup', type: 'Mucolytic (thins mucus)', dosage: '10ml three times daily' },
       { name: 'Salbutamol Inhaler', type: 'Bronchodilator', dosage: '2 puffs every 6 hours as needed' },
@@ -135,7 +135,7 @@ const diseaseDatabase = [
     symptoms: ['headache', 'dizziness', 'blurred_vision', 'chest_pain', 'shortness_of_breath'],
     description: 'High blood pressure is a common condition where the force of blood against artery walls is too high. Often has no symptoms but can lead to serious health problems.',
     severity: 'high',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Amlodipine (5mg)', type: 'Calcium Channel Blocker', dosage: 'As prescribed by doctor' },
       { name: 'Telmisartan (40mg)', type: 'ARB (BP Lowering)', dosage: 'As prescribed by doctor' },
@@ -148,7 +148,7 @@ const diseaseDatabase = [
     symptoms: ['frequent_urination', 'excessive_thirst', 'tiredness', 'blurred_vision', 'slow_healing'],
     description: 'A chronic condition affecting how the body processes blood sugar. Management includes lifestyle changes and medication.',
     severity: 'high',
-    minSymptoms: 2,
+    minSymptoms: 1,
     medicines: [
       { name: 'Metformin (500mg)', type: 'Blood Sugar Control', dosage: 'As prescribed by doctor' },
       { name: 'Glimepiride', type: 'Sulfonylurea', dosage: 'As prescribed by doctor' },
