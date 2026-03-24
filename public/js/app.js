@@ -235,32 +235,6 @@ function initFooter() {
   const footerHTML = `
     <footer class="footer">
       <div class="footer-container">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <h3>🏥 Medicare</h3>
-            <p>AI-powered cloud symptom checker providing preliminary health guidance while encouraging professional medical consultation.</p>
-          </div>
-          <div class="footer-col">
-            <h4>Quick Links</h4>
-            <a href="/checker">Symptom Checker</a>
-            <a href="/doctors">Find Doctors</a>
-            <a href="/history">Medical History</a>
-          </div>
-          <div class="footer-col">
-            <h4>Account</h4>
-            <a href="#" onclick="logout()">Logout</a>
-          </div>
-          <div class="footer-col">
-            <h4>Technology</h4>
-            <a href="#">Node.js Backend</a>
-            <a href="#">Cloud Firestore</a>
-            <a href="#">AI Prediction</a>
-            <a href="#">Firebase Auth</a>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <p>© 2026 Medicare — AI Cloud Symptom Checker. Built for academic purposes. Not a substitute for professional medical advice.</p>
-        </div>
       </div>
     </footer>
   `;
